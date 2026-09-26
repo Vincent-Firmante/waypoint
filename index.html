@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#081321" />
+    <meta name="description" content="Find your coordinates, nearby address, and current weather." />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <title>Waypoint | Where am I?</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="wordmark" href="#top" aria-label="Field finder home">
+          <span class="wordmark-mark" aria-hidden="true">◎</span>
+          <span>WAYPOINT</span>
+        </a>
+        <div class="topbar-actions">
+          <button class="install-button" id="install-button" type="button" aria-label="Install Waypoint" title="Install Waypoint" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3"/></svg>
+            <span>Install</span>
+          </button>
+          <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch to light mode" title="Switch to light mode">
+            <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>
+            <svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.3 15.4A8.5 8.5 0 0 1 8.6 3.7 8.7 8.7 0 1 0 20.3 15.4Z"/></svg>
+          </button>
+          <span class="topbar-caption"><span class="live-dot"></span> YOUR LOCATION, RIGHT NOW</span>
+        </div>
+      </header>
+
+      <main id="top">
+        <section class="intro" aria-labelledby="page-title">
+          <div class="intro-copy">
+            <p class="eyebrow">A little orientation</p>
+            <h1 id="page-title">Where am <em>I?</em></h1>
+            <p class="intro-note">Pinpoint your place, then step outside with the weather.</p>
+          </div>
+          <button class="locate-button" id="locate-button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6.1 7-13a7 7 0 1 0-14 0c0 6.9 7 13 7 13Z"/><circle cx="12" cy="9" r="2.4"/></svg>
+            <span id="button-label">Find my location</span>
+          </button>
+        </section>
+
+        <div class="notice" id="notice" role="status" aria-live="polite">
+          <span class="notice-mark" aria-hidden="true">i</span>
+          <span id="notice-text">Your browser will ask permission to use your location. Nothing is stored.</span>
+        </div>
+
+        <section class="place-search" aria-label="Search another location">
+          <form class="search-form" id="place-search-form">
+            <label class="search-label" for="place-query">LOOK UP ANOTHER PLACE</label>
+            <div class="search-controls">
+              <input id="place-query" name="place" type="search" placeholder="City, address, or landmark" autocomplete="off" required />
+              <button id="place-search-button" type="submit">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>
+                <span>Search</span>
+              </button>
+            </div>
+          </form>
+          <div class="place-search-results" id="place-search-results" aria-live="polite" hidden></div>
+          <div class="recent-searches" id="recent-searches" aria-label="Recent searches" hidden></div>
+        </section>
+
+        <section class="results" aria-label="Location and local weather">
+          <article class="place-panel panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">You are around</p>
+                <h2 id="place-title">Waiting for a fix</h2>
+              </div>
+              <span class="state-tag" id="location-state"><span class="state-dot"></span> NOT LOCATED</span>
+            </div>
+
+            <div class="coordinates" aria-live="polite">
+              <div class="coordinate-item">
+                <span class="coordinate-label">LATITUDE</span>
+                <span class="coordinate-value" id="latitude">--.------</span>
+              </div>
+              <div class="coordinate-divider" aria-hidden="true"></div>
+              <div class="coordinate-item">
+                <span class="coordinate-label">LONGITUDE</span>
+                <span class="coordinate-value" id="longitude">--.------</span>
+              </div>
+            </div>
+
+            <div class="address-row">
+              <span class="address-pin" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-13a7 7 0 1 0-14 0c0 6.8 7 13 7 13Z"/><circle cx="12" cy="8" r="2.3"/></svg>
+              </span>
+              <div>
+                <p class="address-label">NEAREST ADDRESS</p>
+                <p class="address-value" id="address">Your readable address will appear here.</p>
+              </div>
+            </div>
+
+            <div class="place-footer">
+              <div class="place-meta">
+                <span id="accuracy">Accuracy: waiting for location</span>
+                <span class="distance-from-here" id="distance-from-here" aria-live="polite">Search a place to see how far away it is.</span>
+              </div>
+              <div class="place-actions">
+                <div class="route-controls">
+                  <div class="route-profiles" id="route-profiles" role="group" aria-label="Route travel mode">
+                    <button type="button" data-profile="driving" aria-pressed="true">Drive</button>
+                    <button type="button" data-profile="cycling" aria-pressed="false">Cycle</button>
+                    <button type="button" data-profile="walking" aria-pressed="false">Walk</button>
+                  </div>
+                  <button class="route-button" id="route-button" type="button" disabled>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h2a4 4 0 0 0 4-4v-4a4 4 0 0 1 4-4"/></svg>
+                    <span id="route-button-label">Route here</span>
+                  </button>
+                </div>
+                <div class="place-links">
+                  <button class="share-button" id="share-location-button" type="button" disabled>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 10.7 6.6-4.4m-6.6 7 6.6 4.4"/></svg>
+                    <span>Copy link</span>
+                  </button>
+                  <a id="map-link" href="https://www.openstreetmap.org/" target="_blank" rel="noreferrer">Open map <span aria-hidden="true">↗</span></a>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="weather-panel panel">
+            <div class="weather-topline">
+              <div>
+                <p class="eyebrow">Outside, right now</p>
+                <h2>Local weather</h2>
+              </div>
+              <span class="weather-symbol" id="weather-symbol" aria-hidden="true">☼</span>
+            </div>
+            <div class="weather-reading">
+              <span class="temperature" id="temperature">--<span id="temperature-unit">°C</span></span>
+              <span class="weather-description" id="weather-description">Waiting for location</span>
+            </div>
+            <div class="unit-controls">
+              <div class="unit-control">
+                <span class="unit-label">TEMP</span>
+                <div class="unit-segment" id="temperature-units" role="group" aria-label="Temperature units">
+                  <button type="button" data-unit="celsius" aria-pressed="true">°C</button>
+                  <button type="button" data-unit="fahrenheit" aria-pressed="false">°F</button>
+                </div>
+              </div>
+              <div class="unit-control">
+                <span class="unit-label">DISTANCE</span>
+                <div class="unit-segment" id="distance-units" role="group" aria-label="Distance units">
+                  <button type="button" data-unit="km" aria-pressed="true">km</button>
+                  <button type="button" data-unit="mi" aria-pressed="false">mi</button>
+                </div>
+              </div>
+            </div>
+            <div class="weather-details">
+              <div class="weather-detail">
+                <span class="detail-icon humidity-icon" aria-hidden="true">% </span>
+                <span class="detail-label">HUMIDITY</span>
+                <strong id="humidity">--%</strong>
+              </div>
+              <div class="weather-detail">
+                <span class="detail-icon wind-icon" aria-hidden="true">↗</span>
+                <span class="detail-label">WIND</span>
+                <strong id="wind">-- km/h</strong>
+              </div>
+              <div class="weather-detail">
+                <span class="detail-icon feels-icon" aria-hidden="true">◌</span>
+                <span class="detail-label">FEELS LIKE</span>
+                <strong id="feels-like">--°</strong>
+              </div>
+            </div>
+            <p class="weather-updated" id="weather-updated">Weather details use your approximate coordinates.</p>
+          </article>
+        </section>
+
+        <section class="map-section" aria-label="Map preview">
+          <div class="map-heading">
+            <div>
+              <p class="eyebrow">On the map</p>
+              <h2>Live street map</h2>
+            </div>
+            <div class="map-heading-meta">
+              <span class="route-status" id="route-status" hidden></span>
+              <span class="map-credit">DRAG TO EXPLORE</span>
+            </div>
+          </div>
+          <div class="map-frame" id="map-frame">
+            <button class="map-expand-button" id="map-expand-button" type="button" aria-label="Expand map" title="Expand map" aria-pressed="false">
+              <svg class="expand-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4M16 4h4v4M4 16v4h4M20 16v4h-4"/><path d="M4 8l6-6M20 8l-6-6M4 16l6 6M20 16l-6 6"/></svg>
+              <svg class="collapse-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h5V4M20 9h-5V4M4 15h5v5M20 15h-5v5"/><path d="m9 9-6-6m12 6 6-6M9 15l-6 6m12-6 6 6"/></svg>
+            </button>
+            <div class="map-empty" id="map-empty">
+              <span class="map-crosshair" aria-hidden="true">⌖</span>
+              <span>Your map will settle here once you’re located.</span>
+            </div>
+            <div id="map" role="region" aria-label="Interactive OpenStreetMap street map"></div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <span>Location is requested only when you press the button.</span>
+        <span>Search by Photon · Geocoding by OpenStreetMap · Weather by Open-Meteo</span>
+      </footer>
+    </div>
+  </body>
+</html>
